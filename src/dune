@@ -1,0 +1,3 @@
+(library
+ (name caml_harness)
+ (libraries unix threads.posix str))

@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (public_name caml-harness)
+ (libraries caml_harness))

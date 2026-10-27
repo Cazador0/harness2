@@ -1,0 +1,8 @@
+opam-version: "2.0"
+synopsis: "Recursive agent harnessing in OCaml, with agent evals and agent-to-agent messaging"
+description: "An OCaml re-implementation of the Harness2 method (recursive agent harnessing), extended with criteria-based agent evals and A2A-shaped agent-to-agent communication."
+license: "Apache-2.0"
+homepage: "https://github.com/cazador0/caml-harness"
+bug-reports: "https://github.com/cazador0/caml-harness/issues"
+depends: [ "ocaml" {>= "4.14"} "dune" {>= "3.0"} ]
+build: [ ["dune" "build" "-p" name "-j" jobs] ["dune" "runtest" "-p" name] {with-test} ]

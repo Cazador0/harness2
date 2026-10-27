@@ -1,0 +1,4 @@
+(test
+ (name test_caml_harness)
+ (deps (glob_files %{project_root}/scripts/*.py))
+ (libraries caml_harness))

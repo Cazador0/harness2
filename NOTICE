@@ -1,0 +1,15 @@
+caml-harness
+Copyright 2026 the caml-harness authors.
+
+This product is a re-implementation in OCaml of Harness2 ("Harness²: Recursive Agent
+Harnessing for an Open World"), Copyright 2026 Google LLC, licensed under the Apache
+License, Version 2.0. https://arxiv.org/abs/2610.14224
+
+Changes relative to Harness2: the method core (recursion, budget ledger, harness tree,
+leak guards, blind selection, reflection, experience library, scheduling) and the local
+demo were rewritten in OCaml; agent evals (src/eval.ml), A2A-shaped agent-to-agent
+messaging (src/a2a.ml, src/agents.ml) and a Jev agent seam (src/jev.ml) were added.
+scripts/export_prompt.py and scripts/parity.py import an unmodified Harness2 checkout at
+runtime and do not redistribute it.
+
+caml-harness is not affiliated with or endorsed by Google LLC.
