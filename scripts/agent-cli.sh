@@ -12,6 +12,17 @@ OLLAMA_MODEL="${OLLAMA_MODEL:-glm-4.6:cloud}"
 REVIEW_ORDER="${REVIEW_ORDER:-codex gemini ollama}"
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# Cloud containers have no systemd; start the server on demand.
+ollama_up() {
+  curl -fsS -m 2 http://127.0.0.1:11434/api/version >/dev/null 2>&1 && return 0
+  nohup ollama serve >/tmp/ollama-serve.log 2>&1 &
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    curl -fsS -m 1 http://127.0.0.1:11434/api/version >/dev/null 2>&1 && return 0
+    read -r -t 1 _ </dev/null || true
+  done
+  return 1
+}
+
 status() {
   for a in claude codex gemini ollama; do
     if have "$a"; then printf '%-7s installed  %s\n' "$a" "$($a --version 2>/dev/null | head -1)"
@@ -19,6 +30,7 @@ status() {
   done
   have codex && { codex login status >/dev/null 2>&1 && echo "codex: logged in" || echo "codex: not logged in"; }
   [ -f "$HOME/.gemini/oauth_creds.json" ] && echo "gemini: logged in" || echo "gemini: not logged in"
+  have ollama && { ollama_up; ollama signin 2>&1 | grep -qi 'need to be signed in' && echo "ollama: not signed in" || echo "ollama: signed in"; }
 }
 
 login() {
@@ -26,7 +38,7 @@ login() {
     claude) claude setup-token ;;                       # Claude Pro/Max subscription token
     codex)  codex login --device-auth ;;                # ChatGPT Plus/Pro subscription, device code
     gemini) NO_BROWSER=true gemini ;;                   # Google account OAuth, paste-back code
-    ollama) ollama signin ;;                            # ollama.com account (cloud models)
+    ollama) ollama_up; ollama signin ;;                            # ollama.com account (cloud models)
     *) echo "usage: login claude|codex|gemini|ollama"; return 2 ;;
   esac
 }
@@ -37,7 +49,7 @@ run() {
     claude) claude -p "$prompt" ;;
     codex)  codex exec "$prompt" ;;
     gemini) gemini -p "$prompt" ;;
-    ollama) ollama run "$OLLAMA_MODEL" "$prompt" ;;
+    ollama) ollama_up; ollama run "$OLLAMA_MODEL" "$prompt" ;;
     *) echo "unknown agent: $agent"; return 2 ;;
   esac
 }
@@ -53,7 +65,7 @@ review() {
     case "$a" in
       codex)  codex exec review --base "${base#origin/}" 2>/dev/null || printf '%s\n%s' "$ask" "$diff" | codex exec - ;;
       gemini) printf '%s\n%s' "$ask" "$diff" | gemini -p "review" ;;
-      ollama) printf '%s\n%s' "$ask" "$diff" | ollama run "$OLLAMA_MODEL" ;;
+      ollama) ollama_up; printf '%s\n%s' "$ask" "$diff" | ollama run "$OLLAMA_MODEL" ;;
     esac && return 0
     echo "warn: $a review failed, falling back"
   done
