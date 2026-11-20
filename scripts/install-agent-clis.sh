@@ -22,11 +22,18 @@ npm install -g ai @ai-sdk/anthropic @ai-sdk/openai @ai-sdk/google ollama-ai-prov
 
 step "Ollama"
 if ! have ollama; then
+  # The Ollama installer needs zstd to unpack its archive.
+  have zstd || { apt-get update -q >/dev/null 2>&1; apt-get install -y -q zstd >/dev/null 2>&1; } || echo "warn: zstd install failed"
   if curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh; then
     sh /tmp/ollama-install.sh || echo "warn: ollama install failed"
   else
     echo "warn: ollama.com not reachable (allow ollama.com in the environment's network settings)"
   fi
+fi
+
+# No systemd in cloud containers, so start the local server by hand (needed for cloud models too).
+if have ollama && ! curl -fsS -m 2 http://127.0.0.1:11434/api/version >/dev/null 2>&1; then
+  nohup ollama serve >/tmp/ollama-serve.log 2>&1 &
 fi
 
 step "Versions"
