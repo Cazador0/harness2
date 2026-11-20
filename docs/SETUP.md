@@ -140,6 +140,15 @@ changing either. `harness2-check` reports stale configuration until then.
 Codex runs with its sandbox disabled. Review the
 [executor network restrictions](EXPERIMENTS.md#web-access) before evaluation.
 
+## File editing tool substrate
+
+Harness² provides an optimized, robust file editing primitive (`harness2/substrate/tools/file_editor.py`) to replace error-prone terminal string manipulators (`sed`, `cat <<EOF`, `awk`) during coding agent sessions:
+- **Exact substring replacement**: `FileEditor.replace_content` performs exact character replacement with bounds checking (`start_line`, `end_line`).
+- **Ambiguity and missing target protection**: Raises `AmbiguousTargetError` if multiple matches occur without explicit line bounds, and `TargetNotFoundError` if the target string does not match exactly.
+- **Python AST syntax verification**: Validates that changes to Python source files parse without syntax errors (`SyntaxValidationError`) before writing. If syntax fails, the edit is rejected and the file state is preserved atomically.
+- **`TOOL_GUIDANCE_EDITING`**: Ships a standard prompt snippet guiding agents to make deterministic, scoped edits.
+
+
 ## Network access during setup
 
 Setup downloads dependencies from the following hosts:

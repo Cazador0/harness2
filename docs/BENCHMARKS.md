@@ -122,3 +122,40 @@ the improver never receives verifier output. Missing verifier results remain
 unscored. Runs live under `runs/wb/<subset>/`.
 
 For Codex, start the bridge with `harness2-bridge --host 0.0.0.0` so that the containers can reach it.
+
+## Golden PR Replay
+
+Upstream: Internal / enterprise repository adapter (`harness2/benchmarks/golden_pr.py`).
+Enables practitioners to evaluate coding agent harnesses by replaying recent, private, merged internal pull requests from their own engineering organization, avoiding public benchmark data contamination while testing against realistic production codebases.
+
+### Setup and Dataset Schema
+
+Tasks are defined in a JSON dataset manifest conforming to the `GoldenPRTask` schema:
+
+```json
+{
+  "version": "1.0.0",
+  "benchmark": "golden_pr_replay",
+  "tasks": [
+    {
+      "task_id": "PR-1042",
+      "title": "Add retry backoff to RPC client",
+      "description": "Fix intermittent network timeout in RPC client...",
+      "repo_path": "/path/to/local/repo",
+      "base_commit": "a1b2c3d",
+      "merge_commit": "e5f6g7h",
+      "test_command": "pytest tests/test_rpc.py",
+      "domain": "networking",
+      "changed_files": ["src/client.py"],
+      "timeout_seconds": 300
+    }
+  ]
+}
+```
+
+### Isolation and Evaluation Workflow
+
+The `GoldenPRAdapter` manages repository setup, isolation, and evaluation:
+- **`setup_workdir`**: Clones the local repository and checks out `base_commit` in a detached state. Writes `TASK_INSTRUCTIONS.md` to prevent future commit history leakage.
+- **`evaluate_workdir`**: Runs the repository's specified `test_command` on the agent's work directory, capturing the patch diff and execution output as a `GoldenPRResult`.
+
