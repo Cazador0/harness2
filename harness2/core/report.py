@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from typing import Sequence
 
 from .judge import Scored
+from .manifest import BenchmarkManifest, HarnessSpec, ModelSpec
 from .schedule import MODE_NAMES
 
 
@@ -163,3 +164,32 @@ def render(summaries: Sequence[Summary], *, title: str = "", bench: str = "") ->
                 f"number.",
             ]
     return "\n".join(lines)
+
+
+def create_manifest(
+    summary: Summary,
+    model: ModelSpec,
+    harness: HarnessSpec,
+    *,
+    benchmark_name: str = "Harness2 Benchmark",
+    benchmark_version: str = "1.0.0",
+) -> BenchmarkManifest:
+    """Construct a publication-ready BenchmarkManifest linking Model and Harness specifications."""
+    return BenchmarkManifest(
+        benchmark_name=benchmark_name,
+        benchmark_version=benchmark_version,
+        model=model,
+        harness=harness,
+        task_count=summary.n,
+        score=summary.score,
+        all_pass_rate=summary.all_pass,
+        cost_usd=summary.usd if summary.usd > 0 else None,
+        metadata={
+            "mode": summary.mode,
+            "k": summary.k,
+            "kept_base": summary.kept_base,
+            "chose_final": summary.chose_final,
+            "chose_candidate": summary.chose_candidate,
+            "fell_back": summary.fell_back,
+        },
+    )
