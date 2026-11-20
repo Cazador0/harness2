@@ -1,0 +1,8 @@
+{
+  "context_servers": {
+    "zeus": {
+      "command": "uv",
+      "args": ["run", "--directory", "/home/antigravity/Cazador0/zeus", "zeus-mcp"]
+    }
+  }
+}

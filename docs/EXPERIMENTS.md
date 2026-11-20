@@ -90,23 +90,20 @@ release assets, and the script refuses to overwrite an existing file.
 `base_judged.json` beside `judged.json` for the base-harness comparison.
 `harness2-report` covers the refined harness only.
 
-## Web access
+## Web access and sandbox controls
 
 All three benchmarks are public, and JobBench publishes each task's
 `RUBRICS.json` on Hugging Face. An executor with network access can therefore
 retrieve grading criteria. In a validation run of this release, a Codex rollout
 on JobBench downloaded its task's rubric without being instructed to.
 
-The release does not restrict network access. After setup, block the following
-hosts for the executor to reduce access to benchmark data and grading criteria:
+To prevent leakage, Harness² provides active runtime controls in `harness2.core.sandbox`:
+- **`NetworkEgressPolicy`**: Defines blocked domains (`DEFAULT_BLOCKED_DOMAINS` including `github.com`, `raw.githubusercontent.com`, `huggingface.co`, `gitlab.com`, `bitbucket.org`).
+- **`SandboxGuard`**: Inspects shell commands and rollout trajectories. Raises `SandboxViolationError` if an agent attempts:
+  - Unauthorized network egress via commands like `curl`, `wget`, `git clone`, or inline Python network modules (`urllib`, `requests`, `httpx`).
+  - Git history inspection targeting remote or test branches (`git log -p`, `git diff origin/`, `git show`, `git fetch`, `git pull`).
+- **`generate_iptables_rules()`**: Emits kernel-level packet filter rules to enforce loopback-only or domain-blocked isolation.
 
-- `huggingface.co`, `hf.co`, and `*.hf.co`
-- `github.com` and `raw.githubusercontent.com`, for benchmark repositories
-
-Setup itself needs these hosts to download dependencies and data. Codex runs
-with its sandbox disabled, so apply restrictions at the network level, such as
-an egress firewall or DNS policy on the executor host, rather than relying on a
-tool setting. Report the restrictions used alongside results.
 
 ## Results and resume
 
