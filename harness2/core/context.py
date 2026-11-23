@@ -99,6 +99,8 @@ class ContextTree:
                 "context/library/                earlier tasks in this "
                 "area -- browse INDEX.md first, then open what looks relevant"
             )
+        if (self.root / "zeus" / "PRIOR_LESSONS.md").is_file():
+            lines.append("context/zeus/PRIOR_LESSONS.md   retrieved institutional lessons from Zeus")
         return "\n".join(lines)
 
 
@@ -163,6 +165,31 @@ def build(
 
         shutil.copytree(library_dir, dest / "library", dirs_exist_ok=True)
         lib = True
+
+    # Query Zeus for prior institutional lessons on similar cues/tasks
+    try:
+        from .zeus_bridge import ZeusBridge
+        zb = ZeusBridge()
+        if zb.is_available():
+            hits = zb.search(adapter.task_prompt(task_id), k=3)
+            if hits:
+                zdir = dest / "zeus"
+                zdir.mkdir(exist_ok=True)
+                zlines = [
+                    "# Prior Institutional Lessons (from Zeus RAPTOR Index)",
+                    "",
+                    "Retrieved from past agent sessions and tasks on similar cues.",
+                    "",
+                ]
+                for idx, h in enumerate(hits, 1):
+                    zlines += [
+                        f"## Lesson {idx} (score: {h.score:.3f}, source: `{h.location}`)",
+                        h.snippet.strip(),
+                        "",
+                    ]
+                (zdir / "PRIOR_LESSONS.md").write_text("\n".join(zlines), encoding="utf-8")
+    except Exception:
+        pass
 
     assert_no_leak_paths(dest, adapter.spec.leak_globs)
 

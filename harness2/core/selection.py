@@ -346,6 +346,24 @@ def run_selection(
     except (ProposerError, ValueError) as exc:
         if isinstance(exc, ProposerError):
             sel.usd += exc.cost_usd
+        # Evaluate candidates via Zeus ClassifierPort before falling back to base
+        try:
+            from .zeus_bridge import ZeusBridge
+            zb = ZeusBridge()
+            if zb.is_available():
+                cands = {anon: artifacts[lbl] for anon, lbl in sel.id_map.items() if lbl in artifacts}
+                chosen_anon, max_p, evals = zb.evaluate_candidates(cands, adapter.task_prompt(task_id))
+                if chosen_anon and chosen_anon in sel.id_map:
+                    sel.chosen_id = chosen_anon
+                    sel.chosen_label = sel.id_map[chosen_anon]
+                    sel.why = f"Selected via Zeus ClassifierPort (P={max_p:.3f}, model={evals[chosen_anon].model})"
+                    sel.ok = True
+                    sel.chosen_run_id = pool[sel.chosen_label].run_id
+                    sel.chosen_is_base = _is_base(sel.chosen_label)
+                    _persist(sel, root, str(pool[sel.chosen_label].run_dir if sel.chosen_label in pool else ""))
+                    return sel
+        except Exception:
+            pass
         if not _fallback(sel, pool, pool_kind, exc):
             return sel
 
