@@ -149,6 +149,21 @@ class Library:
             lines += [""]
         (d / "EXPERIENCE.md").write_text("\n".join(lines), encoding="utf-8")
         self.rebuild_index()
+
+        # Curate transferable lesson into Zeus
+        if exp.get("lesson"):
+            try:
+                from .zeus_bridge import ZeusBridge
+                zb = ZeusBridge()
+                if zb.is_available():
+                    zb.curate_lesson(
+                        title=f"harness2-{self.domain}-{slug(task_id)}",
+                        rule=str(exp.get("lesson", "")).strip(),
+                        evidence=str(exp.get("evidence", "")).strip(),
+                    )
+            except Exception:
+                pass
+
         return d
 
     def rebuild_index(self) -> Path:
